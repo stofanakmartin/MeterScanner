@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/apk/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.stofoProjects.opencvtest.opencvtest.ui.fragments.FilterPreviewFragment">
+
+    <org.opencv.android.JavaCameraView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/camera_view" />
+
+    <ListView
+        android:layout_width="@dimen/list_filters_width"
+        android:layout_height="match_parent"
+        android:id="@+id/filters_list"
+        />
+
+</FrameLayout>

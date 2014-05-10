@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">OpenCvTest</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Main activity -->
+    <string name="btn_action.scan">Scan numbers</string>
+    <string name="btn_action.filter_preview">Filter preview</string>
+
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+    </style>
+
+    <style name="text_small_white_transparent" parent="@android:style/TextAppearance">
+        <item name="android:textColor">@color/white_transparent_1</item>
+        <item name="android:textSize">@dimen/text_small</item>
+    </style>
+</resources>

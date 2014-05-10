@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="preview_filters">
+        <item>None</item>
+        <item>Canny</item>
+        <item>Sobel</item>
+        <item>Scharr</item>
+    </string-array>
+</resources>

@@ -1,0 +1,18 @@
+<resources>
+
+    <!-- Dimens for padding & margins -->
+    <dimen name="padding_8">8dp</dimen>
+    <dimen name="padding_16">16dp</dimen>
+    <dimen name="padding_32">32dp</dimen>
+    <dimen name="padding_48">48dp</dimen>
+
+    <!-- Dimens for text sizes -->
+    <dimen name="text_small">12sp</dimen>
+    <dimen name="text_medium">16sp</dimen>
+    <dimen name="text_large">20sp</dimen>
+    <dimen name="text_large_extra">25sp</dimen>
+    <dimen name="text_huge">30sp</dimen>
+
+    <!-- Filter preview -->
+    <dimen name="list_filters_width">65dp</dimen>
+</resources>
