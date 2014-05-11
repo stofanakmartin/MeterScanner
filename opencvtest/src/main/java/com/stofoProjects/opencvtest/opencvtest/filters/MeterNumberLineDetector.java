@@ -1,6 +1,7 @@
 package com.stofoProjects.opencvtest.opencvtest.filters;
 
 import com.stofoProjects.opencvtest.opencvtest.models.HoughLine;
+import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -19,14 +20,14 @@ public class MeterNumberLineDetector {
 
     private static final double BOUNDARY_TOLLERANCE = 0.1;
 
-    public static double[] detectLineOfNumbers(List<HoughLine> detectedLines, List<MatOfPoint> redBlob, int[] maxBounds) {
+    public static Rectangle detectLineOfNumbers(List<HoughLine> detectedLines, List<MatOfPoint> redBlob, Rectangle maxBounds) {
 
         if(detectedLines == null || detectedLines.size() == 0 || redBlob == null
                 || redBlob.size() == 0 || redBlob.get(0) == null)
-            return null;
+            return maxBounds;
 
-        double topBoundary = (double)maxBounds[0];
-        double bottomBoundary = topBoundary + (double)maxBounds[1];
+        double topBoundary = maxBounds.getY1();
+        double bottomBoundary = maxBounds.getY2();
 
         final Rect boundBlobRect = Imgproc.boundingRect(redBlob.get(0));
 
@@ -43,19 +44,19 @@ public class MeterNumberLineDetector {
             }
         }
 
-        return new double[]{ topBoundary, bottomBoundary };
+        return new Rectangle(maxBounds.getX1(), topBoundary, maxBounds.getX2(), bottomBoundary);
     }
 
-    public static Mat drawVerticalBoundaries(Mat rgbaImage, double[] verticalBounds) {
+    public static Mat drawVerticalBoundaries(Mat rgbaImage, Rectangle boundaries) {
         if(rgbaImage == null)
             return null;
-        if(verticalBounds == null || verticalBounds.length == 0)
+        if(boundaries == null)
             return rgbaImage;
 
-        Point p1Top = new Point(0.0, verticalBounds[0]);
-        Point p2Top = new Point(rgbaImage.width(), verticalBounds[0]);
-        Point p1Bottom = new Point(0.0, verticalBounds[1]);
-        Point p2Bottom = new Point(rgbaImage.width(), verticalBounds[1]);
+        Point p1Top = new Point(0.0, boundaries.getY1());
+        Point p2Top = new Point(rgbaImage.width(), boundaries.getY1());
+        Point p1Bottom = new Point(0.0, boundaries.getY2());
+        Point p2Bottom = new Point(rgbaImage.width(), boundaries.getY2());
 
         Core.line(rgbaImage, p1Top, p2Top, new Scalar(0,255,0));
         Core.line(rgbaImage, p1Bottom, p2Bottom, new Scalar(0,255,0));

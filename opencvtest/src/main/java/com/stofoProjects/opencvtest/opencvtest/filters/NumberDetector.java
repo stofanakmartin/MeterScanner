@@ -1,10 +1,9 @@
 package com.stofoProjects.opencvtest.opencvtest.filters;
 
-import android.view.ViewGroup;
-
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 import com.jjoe64.graphview.GraphViewSeries;
+import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
 import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
 
 import org.opencv.core.Core;
@@ -26,8 +25,11 @@ public class NumberDetector {
 
     }
 
-    public Mat findNumbers(Mat grayImage, double[] verticalBoundaries) {
-        Rect roi = new Rect(0, (int)Math.round(verticalBoundaries[0]), grayImage.width(), (int)Math.round(verticalBoundaries[1] - verticalBoundaries[0]));
+    public Mat findNumbers(Mat grayImage, Rectangle boundaries) {
+        if(boundaries == null){
+            LogUtils.LOGD(TAG, "Fucked up");
+        }
+        Rect roi = new Rect(boundaries.getX1Int(), boundaries.getY1Int(), boundaries.getWidthInt(), boundaries.getHeightInt());
 
         Mat subGray = grayImage.submat(roi);
 
@@ -42,10 +44,11 @@ public class NumberDetector {
         return mSummedEdges;
     }
 
-    public void draphEdgesGraph(GraphView graphView, ViewGroup graphContainer) {
-        if(mSummedEdges.cols() == 0) {
+    public GraphView updateEdgesGraphView(GraphView graphView) {
+
+        if(mSummedEdges == null || mSummedEdges.cols() == 0) {
             LogUtils.LOGE(TAG, "No data to draw, call findNumbers first");
-            return;
+            return null;
         }
         GraphViewData[] data = new GraphViewData[mSummedEdges.cols()];
 
@@ -53,10 +56,12 @@ public class NumberDetector {
             data[i] = new GraphViewData(i, mSummedEdges.get(0, i)[0]);
         }
 
+        graphView.removeAllSeries();
         graphView.addSeries(new GraphViewSeries(data));
 
-        graphContainer.removeAllViews();
-        graphContainer.addView(graphView);
+
+
+        return graphView;
     }
 
     public Mat drawNumberPositions(Mat rgbaImage) {

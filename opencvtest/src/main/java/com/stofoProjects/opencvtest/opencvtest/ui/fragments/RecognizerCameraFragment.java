@@ -7,14 +7,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.LineGraphView;
 import com.stofoProjects.opencvtest.opencvtest.R;
 import com.stofoProjects.opencvtest.opencvtest.filters.LineDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.MeterNumberLineDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.NumberDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.RedBlobDetector;
+import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
 import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
+import com.stofoProjects.opencvtest.opencvtest.widgets.GraphViewWidget;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -43,7 +43,10 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     private LineDetector mLineDetector;
     private NumberDetector mNumberDetector;
     private Mat mRgba;
-    private int[] mMaxRoiBoundaries;
+    private Rectangle mMaxBoundaries;
+    private Rectangle mBoundaries;
+
+    private GraphViewWidget mGraphWidget;
 
     @InjectView(R.id.graph_container)
     public FrameLayout mGraphContainer;
@@ -97,9 +100,12 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mLineDetector = new LineDetector(width, height);
         mNumberDetector = new NumberDetector();
 
-        final int roiYOffset = (int)Math.round(height * ROI_Y_OFFSET);
-        final int roiYHeight = (int)Math.round(width * ROI_Y_HEIGHT);
-        mMaxRoiBoundaries = new int[]{ roiYOffset, roiYHeight };
+        final double roiYOffset = height * ROI_Y_OFFSET;
+        final double roiYHeight = height * ROI_Y_HEIGHT;
+        mBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
+        mMaxBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
+
+        mGraphWidget = new GraphViewWidget(getActivity(), "Summed edges", mGraphContainer);
     }
 
     @Override
@@ -111,9 +117,10 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
 
-        Rect processingROI = new Rect(0, mMaxRoiBoundaries[0], mRgba.width(), mMaxRoiBoundaries[1]);
+        Rect processingROI = new Rect(mMaxBoundaries.getX1Int(), mMaxBoundaries.getY1Int(), mMaxBoundaries.getWidthInt(), mMaxBoundaries.getHeightInt());
         Mat subRgba = mRgba.submat(processingROI);
         Mat subGray = inputFrame.gray().submat(processingROI);
+        mBoundaries = new Rectangle(0, 0, subRgba.width() - 1, subRgba.height() - 1);
 
         Imgproc.equalizeHist(subGray, subGray);
 
@@ -127,20 +134,12 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
             mLineDetector.findLines(subGray);
             subRgba = mLineDetector.drawLines(subRgba);
 
-            double[] boundaries = MeterNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mMaxRoiBoundaries);
-            //MeterNumberLineDetector.drawVerticalBoundaries(mRgba, boundaries);
+            mBoundaries = MeterNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mBoundaries);
 
-            //subRgba = MeterNumberLineDetector.getNumbersImage(mRgba, boundaries);
-            //boundaries[0] += roiYOffset;
-            //boundaries[1] += roiYOffset;
+            MeterNumberLineDetector.drawVerticalBoundaries(subRgba, mBoundaries);
+            Mat edgesVector = mNumberDetector.findNumbers(subGray, mBoundaries);
 
-            GraphView graphView = new LineGraphView(getActivity(), "Summed edges");
-            mNumberDetector.findNumbers(subGray, boundaries);
-            mNumberDetector.draphEdgesGraph(graphView, mGraphContainer);
-
-            //drawEdgesGraph(Mat summedEdges);
-
-            MeterNumberLineDetector.drawVerticalBoundaries(subRgba, boundaries);
+            updateGraph(edgesVector);
         }
 
         return mRgba;
@@ -161,7 +160,13 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         }
     };
 
-    private void drawEdgesGraph() {
 
+    private void updateGraph(final Mat edgesVector) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mGraphWidget.updateGraph(edgesVector);
+            }
+        });
     }
 }
