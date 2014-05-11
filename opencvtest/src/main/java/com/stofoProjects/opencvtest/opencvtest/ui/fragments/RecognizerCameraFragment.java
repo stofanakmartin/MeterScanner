@@ -14,7 +14,7 @@ import com.stofoProjects.opencvtest.opencvtest.filters.NumberDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.RedBlobDetector;
 import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
 import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
-import com.stofoProjects.opencvtest.opencvtest.widgets.GraphViewWidget;
+import com.stofoProjects.opencvtest.opencvtest.widgets.LineGraphViewWidget;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -46,7 +46,7 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     private Rectangle mMaxBoundaries;
     private Rectangle mBoundaries;
 
-    private GraphViewWidget mGraphWidget;
+    private LineGraphViewWidget mGraphWidget;
 
     @InjectView(R.id.graph_container)
     public FrameLayout mGraphContainer;
@@ -105,7 +105,7 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
         mMaxBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
 
-        mGraphWidget = new GraphViewWidget(getActivity(), "Summed edges", mGraphContainer);
+        mGraphWidget = new LineGraphViewWidget(getActivity(), "Summed edges", mGraphContainer);
     }
 
     @Override
