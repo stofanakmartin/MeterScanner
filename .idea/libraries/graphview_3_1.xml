@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/opencvtest/libs/graphview-3.1.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="file://$PROJECT_DIR$/../GIThub projects/GraphView-master/src" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>
