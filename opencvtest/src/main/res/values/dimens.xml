@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
     <!-- Dimens for padding & margins -->
@@ -15,4 +16,7 @@
 
     <!-- Filter preview -->
     <dimen name="list_filters_width">65dp</dimen>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
 </resources>

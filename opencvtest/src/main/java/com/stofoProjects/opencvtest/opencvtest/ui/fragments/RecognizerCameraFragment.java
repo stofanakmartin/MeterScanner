@@ -98,7 +98,7 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         mRedBlobDetector = new RedBlobDetector();
         mLineDetector = new LineDetector(width, height);
-        mNumberDetector = new NumberDetector();
+        mNumberDetector = new NumberDetector(mRgba.width());
 
         final double roiYOffset = height * ROI_Y_OFFSET;
         final double roiYHeight = height * ROI_Y_HEIGHT;
@@ -137,9 +137,10 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
             mBoundaries = MeterNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mBoundaries);
 
             MeterNumberLineDetector.drawVerticalBoundaries(subRgba, mBoundaries);
-            Mat edgesVector = mNumberDetector.findNumbers(subGray, mBoundaries);
+            mNumberDetector.findNumbers(subGray, mBoundaries);
+            subRgba = mNumberDetector.drawNumberSegments(subRgba);
 
-            updateGraph(edgesVector);
+            updateGraph(mNumberDetector.getSummedEdges());
         }
 
         return mRgba;
