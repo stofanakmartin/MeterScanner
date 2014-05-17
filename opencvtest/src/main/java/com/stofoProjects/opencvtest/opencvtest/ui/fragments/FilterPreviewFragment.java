@@ -31,6 +31,12 @@ public class FilterPreviewFragment extends Fragment implements CameraBridgeViewB
 
     public static final String TAG = LogUtils.makeLogTag(FilterPreviewFragment.class);
 
+    private static final int CANNY_THRESHOLD_1 = 80;
+    private static final int CANNY_THRESHOLD_2 = 100;
+    private static final int SOBEL_THRESHOLD_VALUE = 100;
+    private static final int SOBEL_THRESHOLD_MAXVALUE = 255;
+
+
     private CameraBridgeViewBase mCameraView;
     private Mat mRgba;
     private Mat mBinary;
@@ -118,28 +124,24 @@ public class FilterPreviewFragment extends Fragment implements CameraBridgeViewB
             case FilterAdapter.CANNY:
                 Mat tmp = new Mat(inputFrame.gray().height(), inputFrame.gray().width(), CvType.CV_8UC1);
 
-                Imgproc.Canny(inputFrame.gray(), mBinary, 120, 180);
-                //Imgproc.threshold(mBinary, tmp, 240, 255, Imgproc.THRESH_BINARY);
+                Imgproc.Canny(inputFrame.gray(), mBinary, CANNY_THRESHOLD_1, CANNY_THRESHOLD_2);
                 Imgproc.cvtColor(mBinary, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
                 break;
-            case FilterAdapter.SOBEL:
-                /// Gradient X
-                //Scharr( src_gray, grad_x, ddepth, 1, 0, scale, delta, BORDER_DEFAULT );
-                Imgproc.Sobel(inputFrame.gray(), mSobelGradX, inputFrame.gray().depth(), 1, 0, 3, 1, 0, Imgproc.BORDER_DEFAULT );
-                Imgproc.threshold(mSobelGradX, mSobelGradX, 150, 255, Imgproc.THRESH_BINARY);
-                Core.convertScaleAbs(mSobelGradX, mSobelGradX);
-
-                /// Gradient Y
-                //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
-                Imgproc.Sobel(inputFrame.gray(), mSobelGradY, inputFrame.gray().depth(), 0, 1, 3, 1, 0, Imgproc.BORDER_DEFAULT);
-                Imgproc.threshold(mSobelGradY, mSobelGradY, 150, 255, Imgproc.THRESH_BINARY);
-                Core.convertScaleAbs(mSobelGradY, mSobelGradY);
+            case FilterAdapter.SOBEL_HORIZONTAL:
+                sobelHorizontal(inputFrame.gray());
+                Imgproc.cvtColor(mSobelGradX, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
+                break;
+            case FilterAdapter.SOBEL_VERTICAL:
+                sobelVertical(inputFrame.gray());
+                Imgproc.cvtColor(mSobelGradY, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
+                break;
+            case FilterAdapter.SOBEL_BOTH:
+                sobelVertical(inputFrame.gray());
+                sobelHorizontal(inputFrame.gray());
 
                 Core.addWeighted(mSobelGradX, 1.0, mSobelGradY, 1.0, 0, mSobelGrad);
-
                 Imgproc.cvtColor(mSobelGrad, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
 
-                break;
             case FilterAdapter.SCHARR:
                 Imgproc.Scharr( inputFrame.gray(), mSobelGradX, inputFrame.gray().depth(), 1, 0, 1, 0, Imgproc.BORDER_DEFAULT );
                 Imgproc.threshold(mSobelGradX, mSobelGradX, 220, 255, Imgproc.THRESH_BINARY);
@@ -159,6 +161,19 @@ public class FilterPreviewFragment extends Fragment implements CameraBridgeViewB
         return mRgba;
     }
 
+    private void sobelHorizontal(Mat gray){
+        Imgproc.Sobel(gray, mSobelGradX, gray.depth(), 1, 0, 3, 1, 0, Imgproc.BORDER_DEFAULT );
+        Imgproc.threshold(mSobelGradX, mSobelGradX, SOBEL_THRESHOLD_VALUE,
+                            SOBEL_THRESHOLD_MAXVALUE, Imgproc.THRESH_BINARY);
+        Core.convertScaleAbs(mSobelGradX, mSobelGradX);
+    }
+
+    private void sobelVertical(Mat gray){
+        Imgproc.Sobel(gray, mSobelGradY, gray.depth(), 0, 1, 3, 1, 0, Imgproc.BORDER_DEFAULT);
+        Imgproc.threshold(mSobelGradY, mSobelGradY, SOBEL_THRESHOLD_VALUE,
+                            SOBEL_THRESHOLD_MAXVALUE, Imgproc.THRESH_BINARY);
+        Core.convertScaleAbs(mSobelGradY, mSobelGradY);
+    }
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(getActivity()) {
         @Override

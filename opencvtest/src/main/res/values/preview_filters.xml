@@ -3,7 +3,9 @@
     <string-array name="preview_filters">
         <item>None</item>
         <item>Canny</item>
-        <item>Sobel</item>
+        <item>Sobel-Vertical</item>
+        <item>Sobel-Horizontal</item>
+        <item>Sobel-Both</item>
         <item>Scharr</item>
     </string-array>
 </resources>

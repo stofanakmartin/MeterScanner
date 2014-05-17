@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.stofoProjects.opencvtest.opencvtest.R;
-import com.stofoProjects.opencvtest.opencvtest.filters.LineDetector;
+import com.stofoProjects.opencvtest.opencvtest.filters.HoughLineDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.MeterNumberLineDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.NumberDetector;
 import com.stofoProjects.opencvtest.opencvtest.filters.RedBlobDetector;
@@ -40,7 +40,7 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
 
     private CameraBridgeViewBase mCameraView;
     private RedBlobDetector mRedBlobDetector;
-    private LineDetector mLineDetector;
+    private HoughLineDetector mLineDetector;
     private NumberDetector mNumberDetector;
     private Mat mRgba;
     private Rectangle mMaxBoundaries;
@@ -97,7 +97,7 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         mRedBlobDetector = new RedBlobDetector();
-        mLineDetector = new LineDetector(width, height);
+        mLineDetector = new HoughLineDetector(width, height);
         mNumberDetector = new NumberDetector(mRgba.width());
 
         final double roiYOffset = height * ROI_Y_OFFSET;

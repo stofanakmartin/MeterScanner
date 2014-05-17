@@ -20,6 +20,23 @@ public class MeterNumberLineDetector {
 
     private static final double BOUNDARY_TOLLERANCE = 0.1;
 
+    private int mScreenWidth;
+    private int mScreenHeight;
+
+    private Mat mBinnaryImage;
+    private Mat mLines;
+    private List<HoughLine> mLinesXY;
+
+    private HoughLineDetector mHoughLineDetector;
+
+    public MeterNumberLineDetector(int screenW, int screenH) {
+        mScreenWidth = screenW;
+        mScreenHeight = screenH;
+
+        mHoughLineDetector = new HoughLineDetector(screenW, screenH);
+    }
+
+
     public static Rectangle detectLineOfNumbers(List<HoughLine> detectedLines, List<MatOfPoint> redBlob, Rectangle maxBounds) {
 
         if(detectedLines == null || detectedLines.size() == 0 || redBlob == null

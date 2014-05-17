@@ -18,8 +18,10 @@ public class FilterAdapter extends BaseAdapter {
 
     public static final int NONE = 0;
     public static final int CANNY = 1;
-    public static final int SOBEL = 2;
-    public static final int SCHARR = 3;
+    public static final int SOBEL_HORIZONTAL = 2;
+    public static final int SOBEL_VERTICAL = 3;
+    public static final int SOBEL_BOTH = 4;
+    public static final int SCHARR = 5;
 
     private String[] mFilters;
     private Context mContext;
