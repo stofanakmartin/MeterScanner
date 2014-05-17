@@ -21,6 +21,8 @@ public class RedBlobDetector {
     private static final Scalar topRedFirst = new Scalar(20,255,255, 255);
     private static final Scalar bottomRedSecond = new Scalar(245,120,120, 0);
     private static final Scalar topRedSecond = new Scalar(255,255,255, 255);
+    //private static final Scalar bottomBlackFirst = new Scalar(0,0,0, 0);
+    //private static final Scalar topBlackFirst = new Scalar(60,60,60, 255);
 
     private ColorBlobDetector mColorDetector;
     private List<MatOfPoint> mBlobs;
@@ -30,6 +32,7 @@ public class RedBlobDetector {
         mColorDetector = new ColorBlobDetector();
         mColorDetector.addHsvColor(bottomRedFirst, topRedFirst);
         mColorDetector.addHsvColor(bottomRedSecond, topRedSecond);
+        //mColorDetector.addHsvColor(bottomBlackFirst, topBlackFirst);
         mBlobs = new ArrayList<MatOfPoint>();
     }
 

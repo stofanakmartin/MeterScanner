@@ -120,11 +120,11 @@ public class FilterPreviewFragment extends Fragment implements CameraBridgeViewB
                 mBinary = FilterCollection.cannyFilter(inputFrame.gray());
                 Imgproc.cvtColor(mBinary, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
                 break;
-            case FilterAdapter.SOBEL_HORIZONTAL:
-                Mat sobelX = FilterCollection.sobelHorizontal(inputFrame.gray());
+            case FilterAdapter.SOBEL_VERTICAL:
+                Mat sobelX = FilterCollection.sobelVertical(inputFrame.gray());
                 Imgproc.cvtColor(sobelX, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
                 break;
-            case FilterAdapter.SOBEL_VERTICAL:
+            case FilterAdapter.SOBEL_HORIZONTAL:
                 Mat sobelY = FilterCollection.sobelHorizontal(inputFrame.gray());
                 Imgproc.cvtColor(sobelY, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
                 break;

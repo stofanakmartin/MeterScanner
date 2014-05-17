@@ -23,7 +23,6 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
-import org.opencv.imgproc.Imgproc;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -42,14 +41,18 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     private RedBlobDetector mRedBlobDetector;
     private HoughLineDetector mLineDetector;
     private NumberDetector mNumberDetector;
+    private MeterNumberLineDetector mNumberLineDetector;
     private Mat mRgba;
     private Rectangle mMaxBoundaries;
     private Rectangle mBoundaries;
 
     private LineGraphViewWidget mGraphWidget;
+    private LineGraphViewWidget mGraphWidgetVertical;
 
     @InjectView(R.id.graph_container)
     public FrameLayout mGraphContainer;
+    @InjectView(R.id.graph_container_vertical)
+    public FrameLayout mGraphContainerVertical;
 
 
     public static RecognizerCameraFragment newInstance() {
@@ -105,7 +108,9 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
         mMaxBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
 
-        mGraphWidget = new LineGraphViewWidget(getActivity(), "Summed edges", mGraphContainer);
+        mGraphWidget = new LineGraphViewWidget(getActivity(), "Summed edges", mGraphContainer, true);
+        mGraphWidgetVertical = new LineGraphViewWidget(getActivity(), "Vertical", mGraphContainerVertical,false);
+        mNumberLineDetector = new MeterNumberLineDetector(width, height);
     }
 
     @Override
@@ -122,7 +127,9 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         Mat subGray = inputFrame.gray().submat(processingROI);
         mBoundaries = new Rectangle(0, 0, subRgba.width() - 1, subRgba.height() - 1);
 
-        Imgproc.equalizeHist(subGray, subGray);
+        //Imgproc.equalizeHist(subGray, subGray);
+        mNumberLineDetector.detectLineOfNumbers(subGray);
+        updateGraph(null, mNumberLineDetector.horizontalTextDetector().getSummedRows());
 
         //Mat subRgba = new Mat();
         mRedBlobDetector.findBiggestBlob(subRgba);
@@ -134,13 +141,15 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
             mLineDetector.findLines(subGray);
             subRgba = mLineDetector.drawLines(subRgba);
 
-            mBoundaries = MeterNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mBoundaries);
+            mBoundaries = mNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mBoundaries);
+            //mNumberLineDetector.detectLineOfNumbers(subGray);
+
 
             MeterNumberLineDetector.drawVerticalBoundaries(subRgba, mBoundaries);
             mNumberDetector.findNumbers(subGray, mBoundaries);
             subRgba = mNumberDetector.drawNumberSegments(subRgba);
 
-            updateGraph(mNumberDetector.getSummedEdges());
+            updateGraph(mNumberDetector.getSummedEdges(), null);
         }
 
         return mRgba;
@@ -162,11 +171,14 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     };
 
 
-    private void updateGraph(final Mat edgesVector) {
+    private void updateGraph(final Mat edgesVector, final Mat summedRows) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mGraphWidget.updateGraph(edgesVector);
+                if(edgesVector != null)
+                    mGraphWidget.updateGraph(edgesVector);
+                if(summedRows != null)
+                    mGraphWidgetVertical.updateGraph(summedRows);
             }
         });
     }

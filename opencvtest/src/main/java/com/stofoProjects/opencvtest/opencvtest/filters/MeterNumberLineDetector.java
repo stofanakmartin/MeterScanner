@@ -28,16 +28,25 @@ public class MeterNumberLineDetector {
     private List<HoughLine> mLinesXY;
 
     private HoughLineDetector mHoughLineDetector;
+    private HorizontalTextDetector mHorizontalTextDetector;
 
     public MeterNumberLineDetector(int screenW, int screenH) {
         mScreenWidth = screenW;
         mScreenHeight = screenH;
 
         mHoughLineDetector = new HoughLineDetector(screenW, screenH);
+        mHorizontalTextDetector = new HorizontalTextDetector(screenW, screenH);
     }
 
+    /**
+     * Detection by horizontal projection of binary image
+     * Peak position -> text position
+     */
+    public void detectLineOfNumbers(Mat grayImage) {
+        mHorizontalTextDetector.process(grayImage);
+    }
 
-    public static Rectangle detectLineOfNumbers(List<HoughLine> detectedLines, List<MatOfPoint> redBlob, Rectangle maxBounds) {
+    public Rectangle detectLineOfNumbers(List<HoughLine> detectedLines, List<MatOfPoint> redBlob, Rectangle maxBounds) {
 
         if(detectedLines == null || detectedLines.size() == 0 || redBlob == null
                 || redBlob.size() == 0 || redBlob.get(0) == null)
@@ -86,5 +95,11 @@ public class MeterNumberLineDetector {
         Mat subRgba = rgbaImage.submat(rectROI);
 
         return subRgba;
+    }
+
+
+
+    public HorizontalTextDetector horizontalTextDetector() {
+        return mHorizontalTextDetector;
     }
 }

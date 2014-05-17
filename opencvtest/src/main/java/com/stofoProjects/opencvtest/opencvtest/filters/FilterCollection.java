@@ -68,7 +68,7 @@ public class FilterCollection {
     }
 
     public static Mat cannyFilter(Mat grayImage) {
-        Mat binary = new Mat(grayImage.width(), grayImage.height(), CvType.CV_8UC1);
+        Mat binary = new Mat(grayImage.height(), grayImage.width(), CvType.CV_8UC1);
         Imgproc.Canny(grayImage, binary, CANNY_THRESHOLD_1, CANNY_THRESHOLD_2);
         return binary;
     }

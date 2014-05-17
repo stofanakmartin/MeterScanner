@@ -26,6 +26,10 @@ public class LineGraphViewWidget {
     private static final int DEFAULT_THICKNESS = 1;
     private static final int DEFAULT_AVERAGE_SEGMENTS = 4;
 
+    private static final int ROW_VECTOR = 1;
+    private static final int COLUMN_VECTOR = 2;
+    private int mVectorType;
+
     private GraphView mGraphView;
     private ViewGroup mGraphContainer;
     private GraphViewSeries mGraphSeries;
@@ -39,7 +43,7 @@ public class LineGraphViewWidget {
     private int mGraphAverageColor;
 
 
-    public LineGraphViewWidget(Context context, String graphTitle, ViewGroup graphContainer) {
+    public LineGraphViewWidget(Context context, String graphTitle, ViewGroup graphContainer, boolean showAverage) {
 
         mGraphView = new LineGraphView(context, graphTitle);
         mGraphTitle = graphTitle;
@@ -48,6 +52,7 @@ public class LineGraphViewWidget {
         mGraphContainer.addView(mGraphView);
 
         mGraphAverageColor = context.getResources().getColor(R.color.red);
+        mShowAverage = showAverage;
     }
 
     /**
@@ -55,13 +60,23 @@ public class LineGraphViewWidget {
      * @param vectorData vector of data to show in graph one row many columns
      */
     public void updateGraph(Mat vectorData) {
-        final int dataCount = vectorData.width();
+        final int dataCount;
+        if(vectorData.width() == 1) {
+            mVectorType = COLUMN_VECTOR;
+            dataCount = vectorData.height();
+        } else {
+            mVectorType = ROW_VECTOR;
+            dataCount = vectorData.width();
+        }
+
         if(mGraphData == null || mGraphSeries == null) {
             initGraphData(dataCount);
         }
 
         for(int i = 0; i < dataCount; i++) {
-            mGraphData[i] = new GraphView.GraphViewData(i, vectorData.get(0, i)[0]);
+            mGraphData[i] = mVectorType == ROW_VECTOR
+                            ? new GraphView.GraphViewData(i, vectorData.get(0, i)[0])
+                            : new GraphView.GraphViewData(i, vectorData.get(i, 0)[0]);
         }
 
         //Calculate mean for all segments in vector data

@@ -96,7 +96,6 @@ public class ColorBlobDetector {
             if(i != 0) {
                 Core.inRange(hsvMat, mLowerBounds.get(i), mUpperBounds.get(i), tmpMask);
                 Core.bitwise_or(mask, tmpMask, mask);
-                tmpMask = null;
             } else {
                 //BInarize image 1 means that color of that pixel is in specified interval
                 Core.inRange(hsvMat, mLowerBounds.get(i), mUpperBounds.get(i), mask);
