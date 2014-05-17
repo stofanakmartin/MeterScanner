@@ -72,4 +72,10 @@ public class FilterCollection {
         Imgproc.Canny(grayImage, binary, CANNY_THRESHOLD_1, CANNY_THRESHOLD_2);
         return binary;
     }
+
+    public static Mat thresholdFilter(Mat grayImage) {
+        Mat binary = new Mat(grayImage.height(), grayImage.width(), CvType.CV_8UC1);
+        Imgproc.threshold(grayImage, binary, 0, 255, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU);
+        return binary;
+    }
 }

@@ -6,6 +6,7 @@
         <item>Sobel-Vertical</item>
         <item>Sobel-Horizontal</item>
         <item>Sobel-Both</item>
+        <item>Threshold</item>
         <item>Scharr</item>
     </string-array>
 </resources>

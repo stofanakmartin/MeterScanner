@@ -131,7 +131,11 @@ public class FilterPreviewFragment extends Fragment implements CameraBridgeViewB
             case FilterAdapter.SOBEL_BOTH:
                 Mat sobelResult = FilterCollection.sobelBoth(inputFrame.gray());
                 Imgproc.cvtColor(sobelResult, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
-
+                break;
+            case FilterAdapter.THRESHOLD:
+                Mat binary = FilterCollection.thresholdFilter(inputFrame.gray());
+                Imgproc.cvtColor(binary, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
+                break;
             case FilterAdapter.SCHARR:
                 Imgproc.Scharr( inputFrame.gray(), mSobelGradX, inputFrame.gray().depth(), 1, 0, 1, 0, Imgproc.BORDER_DEFAULT );
                 Imgproc.threshold(mSobelGradX, mSobelGradX, 220, 255, Imgproc.THRESH_BINARY);

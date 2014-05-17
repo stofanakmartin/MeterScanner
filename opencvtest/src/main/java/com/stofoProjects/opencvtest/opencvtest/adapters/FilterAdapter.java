@@ -21,7 +21,8 @@ public class FilterAdapter extends BaseAdapter {
     public static final int SOBEL_HORIZONTAL = 2;
     public static final int SOBEL_VERTICAL = 3;
     public static final int SOBEL_BOTH = 4;
-    public static final int SCHARR = 5;
+    public static final int THRESHOLD = 5;
+    public static final int SCHARR = 6;
 
     private String[] mFilters;
     private Context mContext;
