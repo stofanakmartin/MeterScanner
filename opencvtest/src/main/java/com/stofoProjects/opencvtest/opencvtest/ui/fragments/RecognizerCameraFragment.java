@@ -109,7 +109,8 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mMaxBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
 
         mGraphWidget = new LineGraphViewWidget(getActivity(), "Summed edges", mGraphContainer, true);
-        mGraphWidgetVertical = new LineGraphViewWidget(getActivity(), "Vertical", mGraphContainerVertical,false);
+        mGraphWidgetVertical = new LineGraphViewWidget(getActivity(), "Vertical", mGraphContainerVertical,true);
+        mGraphWidgetVertical.setNumberOfAverageSegments(1);
         mNumberLineDetector = new MeterNumberLineDetector(width, height);
     }
 
@@ -129,28 +130,29 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
 
         //Imgproc.equalizeHist(subGray, subGray);
         mNumberLineDetector.detectLineOfNumbers(subGray);
+        subRgba = mNumberLineDetector.horizontalTextDetector().drawVerticalBoundaries(subRgba);
         updateGraph(null, mNumberLineDetector.horizontalTextDetector().getSummedRows());
 
         //Mat subRgba = new Mat();
-        mRedBlobDetector.findBiggestBlob(subRgba);
+        //mRedBlobDetector.findBiggestBlob(subRgba);
 
-        if(mRedBlobDetector.hasFoundedBlobs()) {
-            mRedBlobDetector.drawBlobs(subRgba);
-
-            // Hough lines
-            mLineDetector.findLines(subGray);
-            subRgba = mLineDetector.drawLines(subRgba);
-
-            mBoundaries = mNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mBoundaries);
-            //mNumberLineDetector.detectLineOfNumbers(subGray);
-
-
-            MeterNumberLineDetector.drawVerticalBoundaries(subRgba, mBoundaries);
-            mNumberDetector.findNumbers(subGray, mBoundaries);
-            subRgba = mNumberDetector.drawNumberSegments(subRgba);
-
-            updateGraph(mNumberDetector.getSummedEdges(), null);
-        }
+//        if(mRedBlobDetector.hasFoundedBlobs()) {
+//            mRedBlobDetector.drawBlobs(subRgba);
+//
+//            // Hough lines
+//            mLineDetector.findLines(subGray);
+//            subRgba = mLineDetector.drawLines(subRgba);
+//
+//            mBoundaries = mNumberLineDetector.detectLineOfNumbers(mLineDetector.getLinesXY(), mRedBlobDetector.getBlobs(), mBoundaries);
+//            //mNumberLineDetector.detectLineOfNumbers(subGray);
+//
+//
+//            MeterNumberLineDetector.drawVerticalBoundaries(subRgba, mBoundaries);
+//            mNumberDetector.findNumbers(subGray, mBoundaries);
+//            subRgba = mNumberDetector.drawNumberSegments(subRgba);
+//
+//            updateGraph(mNumberDetector.getSummedEdges(), null);
+//        }
 
         return mRgba;
     }

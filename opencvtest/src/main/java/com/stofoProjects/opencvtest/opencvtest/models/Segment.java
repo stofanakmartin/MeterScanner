@@ -3,15 +3,20 @@ package com.stofoProjects.opencvtest.opencvtest.models;
 /**
  * Created by Martin Stofanak on 15.5.2014.
  */
-public class NumberSegment {
+public class Segment {
 
     private int mStart;
 
     private int mEnd;
 
-    public NumberSegment(int start, int end) {
+    public Segment(int start, int end) {
         mStart = start;
         mEnd = end;
+    }
+
+    public Segment(Segment segment) {
+        mStart = segment.getStart();
+        mEnd = segment.getEnd();
     }
 
     public int getStart() {

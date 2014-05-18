@@ -1,9 +1,11 @@
 package com.stofoProjects.opencvtest.opencvtest.filters;
 
 import com.stofoProjects.opencvtest.opencvtest.models.MeanSegment;
-import com.stofoProjects.opencvtest.opencvtest.models.NumberSegment;
+import com.stofoProjects.opencvtest.opencvtest.models.Segment;
 import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
+import com.stofoProjects.opencvtest.opencvtest.utils.DataUtils;
 import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
+import com.stofoProjects.opencvtest.opencvtest.utils.MathUtils;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -32,7 +34,7 @@ public class NumberDetector {
     private int mImageWidth;
     private int mRegionDistanceTollerance;
     private int mRegionWidthTollerance;
-    private List<NumberSegment> mNumberSegments;
+    private List<Segment> mNumberSegments;
 
     public NumberDetector(int imageWidth) {
         mBoundaries = null;
@@ -42,15 +44,17 @@ public class NumberDetector {
     }
 
     public void findNumbers(Mat grayImage, Rectangle boundaries) {
-        if(boundaries == null){
-            LogUtils.LOGD(TAG, "Fucked up");
-        }
+        if(boundaries == null)
+            return;
+
         mBoundaries = boundaries;
         final Mat edgeImage = applyCanny(grayImage, boundaries);
         final Mat summedEdges = verticalProjection(edgeImage);
-        final List<MeanSegment> meanSegments = calcMeanSegments(summedEdges);
+        final List<MeanSegment> meanSegments = MathUtils.calculateMeanSegments(
+                                                    summedEdges,
+                                                    mNumberOfSegments,
+                                                    DataUtils.ROW_VECTOR);
         mNumberSegments = findNumberSegments(summedEdges ,meanSegments);
-
 
     }
 
@@ -87,38 +91,9 @@ public class NumberDetector {
         return mSummedEdges;
     }
 
-    /**
-     * Calculates mean for every segment in vector data
-     * @param vectorData vector of data which we segments and calculates mean
-     * @return list of calculated mean object
-     */
-    private List<MeanSegment> calcMeanSegments(Mat vectorData) {
-        final int segmentLength = vectorData.width() / mNumberOfSegments;
-        List<MeanSegment> averages = new ArrayList<MeanSegment>(mNumberOfSegments);
-        //double[] averages = new double[mAverageSegments];
+    private List<Segment> findNumberSegments(Mat vectorData, List<MeanSegment> meanValues) {
 
-        for(int i = 0; i < mNumberOfSegments; i++) {
-            int start = i * segmentLength;
-            int end = ((i + 1) * segmentLength) - 1;
-            Mat segmentVector = vectorData.colRange(start, end);
-            averages.add(new MeanSegment(start, end, countAverage(segmentVector)));
-        }
-        return averages;
-    }
-
-    /**
-     * Count average value from Mat one row vector
-     * @param vectorData vector
-     * @return average value
-     */
-    private double countAverage(Mat vectorData) {
-        Scalar mean = Core.mean(vectorData);
-        return mean.val[0];
-    }
-
-    private List<NumberSegment> findNumberSegments(Mat vectorData, List<MeanSegment> meanValues) {
-
-        List<NumberSegment> numberSegments = new ArrayList<NumberSegment>();
+        List<Segment> numberSegments = new ArrayList<Segment>();
 
         int tmpStart = -1;
         for(int i = 0; i < meanValues.size(); i++) {
@@ -128,7 +103,7 @@ public class NumberDetector {
                         tmpStart = j;
                 } else if (vectorData.get(0, j)[0] < meanValues.get(i).getMeanValue()) {
                     if(tmpStart != -1) {
-                        numberSegments.add(new NumberSegment(tmpStart, j));
+                        numberSegments.add(new Segment(tmpStart, j));
                         tmpStart = -1;
                     }
                 }
@@ -142,20 +117,20 @@ public class NumberDetector {
         return numberSegments;
     }
 
-    private List<NumberSegment> joinSmallSegments(List<NumberSegment> segments) {
-        List<NumberSegment> filteredSegments = new ArrayList<NumberSegment>();
+    private List<Segment> joinSmallSegments(List<Segment> segments) {
+        List<Segment> filteredSegments = new ArrayList<Segment>();
 
-        NumberSegment segment = null;
+        Segment segment = null;
         for(int i = 0; i < segments.size() - 1 ; i++) {
 
-            NumberSegment actualSegment = segments.get(i);
-            NumberSegment nextSegment = segments.get(i + 1);
+            Segment actualSegment = segments.get(i);
+            Segment nextSegment = segments.get(i + 1);
 
             if(nextSegment.getStart() - actualSegment.getEnd() < mRegionDistanceTollerance) {
                 if(segment == null)
-                    segment = new NumberSegment(actualSegment.getStart(), nextSegment.getEnd());
+                    segment = new Segment(actualSegment.getStart(), nextSegment.getEnd());
 
-                segment = new NumberSegment(segment.getStart(), nextSegment.getEnd());
+                segment = new Segment(segment.getStart(), nextSegment.getEnd());
 
             } else {
                 if(segment != null) {
@@ -168,8 +143,8 @@ public class NumberDetector {
         return filteredSegments;
     }
 
-    private List<NumberSegment> removeSmallSegments(List<NumberSegment> segments) {
-        List<NumberSegment> filteredSegments = new ArrayList<NumberSegment>();
+    private List<Segment> removeSmallSegments(List<Segment> segments) {
+        List<Segment> filteredSegments = new ArrayList<Segment>();
 
         for(int i = 0; i < segments.size(); i++) {
             if(segments.get(i).getWidth() > mRegionWidthTollerance) {

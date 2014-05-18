@@ -8,6 +8,7 @@ import com.jjoe64.graphview.GraphViewSeries;
 import com.jjoe64.graphview.LineGraphView;
 import com.stofoProjects.opencvtest.opencvtest.R;
 import com.stofoProjects.opencvtest.opencvtest.models.MeanSegment;
+import com.stofoProjects.opencvtest.opencvtest.utils.DataUtils;
 import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
 
 import org.opencv.core.Core;
@@ -26,8 +27,7 @@ public class LineGraphViewWidget {
     private static final int DEFAULT_THICKNESS = 1;
     private static final int DEFAULT_AVERAGE_SEGMENTS = 4;
 
-    private static final int ROW_VECTOR = 1;
-    private static final int COLUMN_VECTOR = 2;
+
     private int mVectorType;
 
     private GraphView mGraphView;
@@ -62,10 +62,10 @@ public class LineGraphViewWidget {
     public void updateGraph(Mat vectorData) {
         final int dataCount;
         if(vectorData.width() == 1) {
-            mVectorType = COLUMN_VECTOR;
+            mVectorType = DataUtils.COLUMN_VECTOR;
             dataCount = vectorData.height();
         } else {
-            mVectorType = ROW_VECTOR;
+            mVectorType = DataUtils.ROW_VECTOR;
             dataCount = vectorData.width();
         }
 
@@ -74,7 +74,7 @@ public class LineGraphViewWidget {
         }
 
         for(int i = 0; i < dataCount; i++) {
-            mGraphData[i] = mVectorType == ROW_VECTOR
+            mGraphData[i] = mVectorType == DataUtils.ROW_VECTOR
                             ? new GraphView.GraphViewData(i, vectorData.get(0, i)[0])
                             : new GraphView.GraphViewData(i, vectorData.get(i, 0)[0]);
         }
@@ -123,14 +123,20 @@ public class LineGraphViewWidget {
      * @return list of calculated means objects
      */
     private List<MeanSegment> countAverageSegments(Mat vectorData) {
-        final int segmentLength = vectorData.width() / mAverageSegments;
+        final int segmentLength = (mVectorType == DataUtils.COLUMN_VECTOR)
+                                    ? vectorData.height() / mAverageSegments
+                                    : vectorData.width() / mAverageSegments;
         List<MeanSegment> averages = new ArrayList<MeanSegment>(mAverageSegments);
-        //double[] averages = new double[mAverageSegments];
 
         for(int i = 0; i < mAverageSegments; i++) {
             int start = i * segmentLength;
             int end = ((i + 1) * segmentLength) - 1;
-            Mat segmentVector = vectorData.colRange(start, end);
+            Mat segmentVector;
+            if(mVectorType == DataUtils.COLUMN_VECTOR)
+                segmentVector = vectorData.rowRange(start, end);
+            else
+                segmentVector = vectorData.colRange(start, end);
+
             averages.add(new MeanSegment(start, end, countAverage(segmentVector)));
         }
         return averages;
@@ -148,5 +154,11 @@ public class LineGraphViewWidget {
 
     private GraphViewSeries.GraphViewSeriesStyle getGraphStyleFromColor(int color) {
         return  new GraphViewSeries.GraphViewSeriesStyle(color, DEFAULT_THICKNESS);
+    }
+
+
+
+    public void setNumberOfAverageSegments(int mAverageSegments) {
+        this.mAverageSegments = mAverageSegments;
     }
 }
