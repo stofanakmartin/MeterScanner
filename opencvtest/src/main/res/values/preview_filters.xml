@@ -8,5 +8,7 @@
         <item>Sobel-Both</item>
         <item>Threshold</item>
         <item>Scharr</item>
+        <item>Canny Erode</item>
+        <item>Canny Dilate</item>
     </string-array>
 </resources>

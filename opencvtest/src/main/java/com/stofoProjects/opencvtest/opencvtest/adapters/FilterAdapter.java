@@ -23,6 +23,8 @@ public class FilterAdapter extends BaseAdapter {
     public static final int SOBEL_BOTH = 4;
     public static final int THRESHOLD = 5;
     public static final int SCHARR = 6;
+    public static final int CANNY_ERODE = 7;
+    public static final int CANNY_DILATE = 8;
 
     private String[] mFilters;
     private Context mContext;

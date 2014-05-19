@@ -5,6 +5,7 @@ import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 /**
@@ -77,5 +78,21 @@ public class FilterCollection {
         Mat binary = new Mat(grayImage.height(), grayImage.width(), CvType.CV_8UC1);
         Imgproc.threshold(grayImage, binary, 0, 255, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU);
         return binary;
+    }
+
+    public static Mat dilate(Mat image) {
+        Mat output = new Mat();
+        Imgproc.dilate(image, output, Imgproc.getStructuringElement(Imgproc.MORPH_RECT,
+                        new Size(3, 3)));
+
+        return output;
+    }
+
+    public static Mat erode(Mat image) {
+        Mat output = new Mat();
+        Imgproc.erode(image, output, Imgproc.getStructuringElement(Imgproc.MORPH_RECT,
+                new Size(1, 1)));
+
+        return output;
     }
 }

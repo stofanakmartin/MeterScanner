@@ -146,7 +146,16 @@ public class FilterPreviewFragment extends Fragment implements CameraBridgeViewB
 
                 Core.addWeighted(mSobelGradX, 0.5, mSobelGradY, 0.5, 0, mSobelGrad);
                 Imgproc.cvtColor(mSobelGrad, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
-
+                break;
+            case FilterAdapter.CANNY_ERODE:
+                Mat outputErode = FilterCollection.cannyFilter(inputFrame.gray());
+                outputErode = FilterCollection.erode(outputErode);
+                Imgproc.cvtColor(outputErode, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
+                break;
+            case FilterAdapter.CANNY_DILATE:
+                Mat outputDilate = FilterCollection.cannyFilter(inputFrame.gray());
+                outputDilate = FilterCollection.dilate(outputDilate);
+                Imgproc.cvtColor(outputDilate, mRgba, Imgproc.COLOR_GRAY2RGBA, 4);
                 break;
             default:
                 mRgba = inputFrame.rgba();
