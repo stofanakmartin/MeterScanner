@@ -142,8 +142,9 @@ public class NumberDetector {
                 if(segment != null) {
                     filteredSegments.add(segment);
                     segment = null;
-                } else
+                } else {
                     filteredSegments.add(actualSegment);
+                }
             }
         }
 
