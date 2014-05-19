@@ -131,7 +131,13 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         //Imgproc.equalizeHist(subGray, subGray);
         mNumberLineDetector.detectLineOfNumbers(subGray);
         subRgba = mNumberLineDetector.horizontalTextDetector().drawVerticalBoundaries(subRgba);
-        updateGraph(null, mNumberLineDetector.horizontalTextDetector().getSummedRows());
+        mBoundaries = mNumberLineDetector.horizontalTextDetector().getNumberLineBoundaries();
+
+        mNumberDetector.findNumbers(subGray, mBoundaries);
+        subRgba = mNumberDetector.drawNumberSegments(subRgba);
+
+        updateGraph(mNumberDetector.getSummedEdges()
+                    , mNumberLineDetector.horizontalTextDetector().getSummedRows());
 
         //Mat subRgba = new Mat();
         //mRedBlobDetector.findBiggestBlob(subRgba);

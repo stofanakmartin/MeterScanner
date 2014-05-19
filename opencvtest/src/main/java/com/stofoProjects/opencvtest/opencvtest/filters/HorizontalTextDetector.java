@@ -1,6 +1,7 @@
 package com.stofoProjects.opencvtest.opencvtest.filters;
 
 import com.stofoProjects.opencvtest.opencvtest.models.MeanSegment;
+import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
 import com.stofoProjects.opencvtest.opencvtest.models.Segment;
 import com.stofoProjects.opencvtest.opencvtest.utils.DataUtils;
 import com.stofoProjects.opencvtest.opencvtest.utils.MathUtils;
@@ -28,6 +29,7 @@ public class HorizontalTextDetector {
     private List<MeanSegment> mMeanSegments;
     private double mMaxValue;
     private Segment mNumberLineSegment;
+    private Rectangle mNumberLineBoundaries;
 
     public HorizontalTextDetector(int width, int height) {
         mImageWidth = width;
@@ -56,7 +58,11 @@ public class HorizontalTextDetector {
         List<Segment> joinedSegments = joinSegments(mSummedRows, segments);
 
         mNumberLineSegment = findBiggestSegment(joinedSegments);
-        mNumberLineSegment = expandBiggestSegment(mSummedRows, mNumberLineSegment);
+
+        if(mNumberLineSegment != null) {
+            mNumberLineSegment = expandBiggestSegment(mSummedRows, mNumberLineSegment);
+            mNumberLineBoundaries = DataUtils.rectangleFromSegment(mNumberLineSegment, grayImage.width());
+        }
     }
 
     /**
@@ -193,5 +199,9 @@ public class HorizontalTextDetector {
 
     public Mat getSummedRows() {
         return mSummedRows;
+    }
+
+    public Rectangle getNumberLineBoundaries() {
+        return mNumberLineBoundaries;
     }
 }

@@ -39,7 +39,7 @@ public class NumberDetector {
     public NumberDetector(int imageWidth) {
         mBoundaries = null;
         mImageWidth = imageWidth;
-        mRegionDistanceTollerance = imageWidth / 60;
+        mRegionDistanceTollerance = 10;//imageWidth / 60;
         mRegionWidthTollerance = imageWidth / 60;
     }
 
@@ -117,6 +117,12 @@ public class NumberDetector {
         return numberSegments;
     }
 
+    /**
+     * Loops through all founded regions looking for regions that are close to each other, joining
+     * them into one
+     * @param segments List of all segments
+     * @return List of filtered segments
+     */
     private List<Segment> joinSmallSegments(List<Segment> segments) {
         List<Segment> filteredSegments = new ArrayList<Segment>();
 
@@ -136,10 +142,15 @@ public class NumberDetector {
                 if(segment != null) {
                     filteredSegments.add(segment);
                     segment = null;
-                }
-                filteredSegments.add(segments.get(i));
+                } else
+                    filteredSegments.add(actualSegment);
             }
         }
+
+        if(segment != null) {
+            filteredSegments.add(segment);
+        }
+
         return filteredSegments;
     }
 
@@ -161,7 +172,7 @@ public class NumberDetector {
         for(int i = 0; i < mNumberSegments.size(); i++) {
             Point p1 = new Point(mNumberSegments.get(i).getStart(), mBoundaries.getY1Int());
             Point p2 = new Point(mNumberSegments.get(i).getEnd(), mBoundaries.getY2Int());
-            Core.rectangle(rgbaImage, p1, p2, new Scalar(128, 0, 255));
+            Core.rectangle(rgbaImage, p1, p2, new Scalar(0, 255, 0));
         }
 
         return rgbaImage;
