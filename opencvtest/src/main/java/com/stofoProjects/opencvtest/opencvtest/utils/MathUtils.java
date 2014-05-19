@@ -1,12 +1,15 @@
 package com.stofoProjects.opencvtest.opencvtest.utils;
 
 import com.stofoProjects.opencvtest.opencvtest.models.MeanSegment;
+import com.stofoProjects.opencvtest.opencvtest.models.Segment;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -48,5 +51,26 @@ public class MathUtils {
     private static double countAverage(Mat vectorData) {
         Scalar mean = Core.mean(vectorData);
         return mean.val[0];
+    }
+
+    /**
+     * Returns segment with median width from all segments
+     * @param segments segments colletion
+     * @return median segment
+     */
+    public static Segment medianSegment(List<Segment> segments) {
+
+        Collections.sort(segments, new Comparator<Segment>() {
+            @Override
+            public int compare(Segment segment1, Segment segment2) {
+                return segment1.getWidth() < segment2.getWidth()
+                        ? -1
+                        : (segment1.getWidth() == segment1.getWidth()
+                            ? 0
+                            : 1);
+            }
+        });
+
+        return segments.get(Math.round(segments.size() / 2));
     }
 }

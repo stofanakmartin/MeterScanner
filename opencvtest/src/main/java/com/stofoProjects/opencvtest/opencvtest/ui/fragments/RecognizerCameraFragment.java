@@ -108,8 +108,9 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
         mMaxBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
 
-        mGraphWidget = new LineGraphViewWidget(getActivity(), "Summed edges", mGraphContainer, true);
-        mGraphWidgetVertical = new LineGraphViewWidget(getActivity(), "Vertical", mGraphContainerVertical,true);
+        mGraphWidget = new LineGraphViewWidget(getActivity(), "Vertical edges", mGraphContainer, true);
+        mGraphWidget.setNumberOfAverageSegments(5);
+        mGraphWidgetVertical = new LineGraphViewWidget(getActivity(), "Horizontal", mGraphContainerVertical,true);
         mGraphWidgetVertical.setNumberOfAverageSegments(1);
         mNumberLineDetector = new MeterNumberLineDetector(width, height);
     }

@@ -24,9 +24,10 @@ import java.util.List;
 public class NumberDetector {
 
     private static final String TAG = LogUtils.makeLogTag(NumberDetector.class);
-    private static final int DEFAULT_SEGMENTS_COUNT = 3;
+    private static final int DEFAULT_SEGMENTS_COUNT = 5;
     private static final int DEFAULT_CANNY_THRESHOLD_1 = 150;
     private static final int DEFAULT_CANNY_THRESHOLD_2 = 200;
+    private static final int MINIMUM_SEGMENTS_COUNT = 5;
 
     private Rectangle mBoundaries;
     private Mat mSummedEdges;
@@ -39,7 +40,7 @@ public class NumberDetector {
     public NumberDetector(int imageWidth) {
         mBoundaries = null;
         mImageWidth = imageWidth;
-        mRegionDistanceTollerance = 10;//imageWidth / 60;
+        mRegionDistanceTollerance = imageWidth / 60;
         mRegionWidthTollerance = imageWidth / 60;
     }
 
@@ -114,6 +115,10 @@ public class NumberDetector {
 
         numberSegments = removeSmallSegments(numberSegments);
 
+        if(numberSegments != null && numberSegments.size() >= MINIMUM_SEGMENTS_COUNT) {
+            final Segment medianSegment = MathUtils.medianSegment(numberSegments);
+            numberSegments = splitLargeSegments(numberSegments, medianSegment);
+        }
         return numberSegments;
     }
 
@@ -177,6 +182,41 @@ public class NumberDetector {
         }
 
         return rgbaImage;
+    }
+
+    /**
+     * Splits large segments of image, which potentionaly holds two numbers
+     * @return filtered segments with splited big segments
+     */
+    private List<Segment> splitLargeSegments(List<Segment> segments, Segment etalonSegment) {
+
+        final double multiplier = 2;
+        List<Segment> filteredSegments = new ArrayList<Segment>();
+
+        for(Segment segment : segments) {
+            if(segment.getWidth() >= etalonSegment.getWidth() * multiplier) {
+                //Split segment and put tollerance space between them
+                Segment newSegmentLeft = new Segment(
+                                                    segment.getStart(),
+                                                    segment.getStart()
+                                                            + (segment.getWidth() / 2)
+                                                            - (mRegionDistanceTollerance / 2)
+                );
+
+                Segment newSegmentRight = new Segment(
+                                                segment.getStart()
+                                                    + (mRegionDistanceTollerance / 2)
+                                                    + (segment.getWidth() / 2),
+                                                segment.getEnd()
+                );
+                filteredSegments.add(newSegmentLeft);
+                filteredSegments.add(newSegmentRight);
+
+            } else
+                filteredSegments.add(segment);
+        }
+
+        return filteredSegments;
     }
 
     //************* GETTERS & SETTERS *******************
