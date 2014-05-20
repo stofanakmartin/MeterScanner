@@ -1,8 +1,8 @@
 package com.stofoProjects.opencvtest.opencvtest.filters;
 
 import com.stofoProjects.opencvtest.opencvtest.models.MeanSegment;
-import com.stofoProjects.opencvtest.opencvtest.models.Segment;
 import com.stofoProjects.opencvtest.opencvtest.models.Rectangle;
+import com.stofoProjects.opencvtest.opencvtest.models.Segment;
 import com.stofoProjects.opencvtest.opencvtest.utils.DataUtils;
 import com.stofoProjects.opencvtest.opencvtest.utils.LogUtils;
 import com.stofoProjects.opencvtest.opencvtest.utils.MathUtils;
@@ -13,7 +13,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,7 @@ public class NumberDetector {
         mBoundaries = null;
         mImageWidth = imageWidth;
         mRegionDistanceTollerance = imageWidth / 60;
-        mRegionWidthTollerance = imageWidth / 60;
+        mRegionWidthTollerance = imageWidth / 50;
     }
 
     public void findNumbers(Mat grayImage, Rectangle boundaries) {
@@ -49,7 +48,10 @@ public class NumberDetector {
             return;
 
         mBoundaries = boundaries;
-        final Mat edgeImage = applyCanny(grayImage, boundaries);
+        Rect roi = new Rect(boundaries.getX1Int(), boundaries.getY1Int(), boundaries.getWidthInt(), boundaries.getHeightInt());
+        Mat subGray = grayImage.submat(roi);
+
+        final Mat edgeImage = FilterCollection.cannyFilter(grayImage);
         final Mat summedEdges = verticalProjection(edgeImage);
         final List<MeanSegment> meanSegments = MathUtils.calculateMeanSegments(
                                                     summedEdges,
@@ -59,22 +61,6 @@ public class NumberDetector {
 
     }
 
-    /**
-     * Edge detection by Canny operator
-     * @param grayImage gray source image
-     * @param boundaries coords in which line of number should be
-     * @return edge image
-     */
-    private Mat applyCanny(Mat grayImage, Rectangle boundaries) {
-        Rect roi = new Rect(boundaries.getX1Int(), boundaries.getY1Int(), boundaries.getWidthInt(), boundaries.getHeightInt());
-
-        Mat subGray = grayImage.submat(roi);
-
-        Mat edges = new Mat(subGray.height(), subGray.width(), CvType.CV_8UC1);
-        Imgproc.Canny(subGray, edges, DEFAULT_CANNY_THRESHOLD_1, DEFAULT_CANNY_THRESHOLD_2);
-
-        return edges;
-    }
 
     /**
      * Sums all columns into one row vector
@@ -92,6 +78,21 @@ public class NumberDetector {
         return mSummedEdges;
     }
 
+    /**
+     * Method which from summed columns vector of edge image and mean values(number of segments)
+     * from these data extract the numbers position. If the value in vector is greater than mean
+     * value in actual segment than we consider it as a number
+     *
+     * After that basic algorithm, method process extracted segments:
+     * - join neighbour segments
+     * - remove small segments
+     * - split large segments into two smaller
+     *
+     * @param vectorData Summed columns of edge binary image
+     * @param meanValues Mean values of vectorData, can have more values(for each segment of
+     *                   vectorData one)
+     * @return List of filtered segments - regions where number should be
+     */
     private List<Segment> findNumberSegments(Mat vectorData, List<MeanSegment> meanValues) {
 
         List<Segment> numberSegments = new ArrayList<Segment>();
@@ -160,6 +161,11 @@ public class NumberDetector {
         return filteredSegments;
     }
 
+    /**
+     * Removes segments which have very small width
+     * @param segments List of segments
+     * @return Filtered list of segments
+     */
     private List<Segment> removeSmallSegments(List<Segment> segments) {
         List<Segment> filteredSegments = new ArrayList<Segment>();
 
@@ -171,6 +177,11 @@ public class NumberDetector {
         return  filteredSegments;
     }
 
+    /**
+     * Draws founded segments. Rectangles which should bounds the number in image
+     * @param rgbaImage Image to which we are drawing
+     * @return Image with drawed rectangles
+     */
     public Mat drawNumberSegments(Mat rgbaImage) {
         if(mBoundaries == null)
             return rgbaImage;
@@ -186,7 +197,13 @@ public class NumberDetector {
 
     /**
      * Splits large segments of image, which potentionaly holds two numbers
-     * @return filtered segments with splited big segments
+     * Method is looking on widths of founded segments.
+     * If segment in List is wider that specified multiplicator * width of etalon segment, than
+     * the segment is split in two, with the small gap between them
+     *
+     * @param segments List of segments to be filtered
+     * @param etalonSegment Etalon segment according to which we do filtration
+     * @return filtered segments with split big segments
      */
     private List<Segment> splitLargeSegments(List<Segment> segments, Segment etalonSegment) {
 
