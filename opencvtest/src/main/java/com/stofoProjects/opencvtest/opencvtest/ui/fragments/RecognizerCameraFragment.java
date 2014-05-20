@@ -22,6 +22,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 
 import butterknife.ButterKnife;
@@ -46,8 +47,8 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
     private Rectangle mMaxBoundaries;
     private Rectangle mBoundaries;
 
-    private LineGraphViewWidget mGraphWidget;
-    private LineGraphViewWidget mGraphWidgetVertical;
+    private LineGraphViewWidget mGraphWidgetBottom;
+    private LineGraphViewWidget mGraphWidgetTop;
 
     @InjectView(R.id.graph_container)
     public FrameLayout mGraphContainer;
@@ -108,10 +109,10 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         mBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
         mMaxBoundaries = new Rectangle(0, roiYOffset, width, roiYOffset + roiYHeight);
 
-        mGraphWidget = new LineGraphViewWidget(getActivity(), "Vertical edges", mGraphContainer, true);
-        mGraphWidget.setNumberOfAverageSegments(5);
-        mGraphWidgetVertical = new LineGraphViewWidget(getActivity(), "Horizontal", mGraphContainerVertical,true);
-        mGraphWidgetVertical.setNumberOfAverageSegments(1);
+        mGraphWidgetBottom = new LineGraphViewWidget(getActivity(), "Vertical edges", mGraphContainer, true);
+        mGraphWidgetBottom.setNumberOfAverageSegments(5);
+        //mGraphWidgetTop = new LineGraphViewWidget(getActivity(), "Horizontal", mGraphContainerVertical,true);
+        //mGraphWidgetTop.setNumberOfAverageSegments(1);
         mNumberLineDetector = new MeterNumberLineDetector(width, height);
     }
 
@@ -136,9 +137,10 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
 
         mNumberDetector.findNumbers(subGray, mBoundaries);
         subRgba = mNumberDetector.drawNumberSegments(subRgba);
+        mRgba = mNumberDetector.drawNumbersToImage(mRgba, subGray, new Point(0,0));
 
         updateGraph(mNumberDetector.getSummedEdges()
-                    , mNumberLineDetector.horizontalTextDetector().getSummedRows());
+                , mNumberLineDetector.horizontalTextDetector().getSummedRows());
 
         //Mat subRgba = new Mat();
         //mRedBlobDetector.findBiggestBlob(subRgba);
@@ -184,10 +186,10 @@ public class RecognizerCameraFragment extends Fragment implements CameraBridgeVi
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if(edgesVector != null)
-                    mGraphWidget.updateGraph(edgesVector);
-                if(summedRows != null)
-                    mGraphWidgetVertical.updateGraph(summedRows);
+                if(edgesVector != null && mGraphWidgetBottom != null)
+                    mGraphWidgetBottom.updateGraph(edgesVector);
+                if(summedRows != null && mGraphWidgetTop != null)
+                    mGraphWidgetTop.updateGraph(summedRows);
             }
         });
     }

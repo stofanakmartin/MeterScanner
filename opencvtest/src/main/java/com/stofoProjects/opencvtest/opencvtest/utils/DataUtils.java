@@ -19,8 +19,14 @@ public class DataUtils {
      * @param imageWidth width of image to set x axis from 0 to width
      * @return rectangle object
      */
-    public static Rectangle rectangleFromSegment(Segment segment, int imageWidth) {
+    public static Rectangle rectangleFromSegmentVertical(Segment segment, int imageWidth) {
         return new Rectangle(0, segment.getStart(),
                             imageWidth, segment.getEnd());
+    }
+
+
+    public static Rectangle rectangleFromSegmentHorizontal(Segment segment, Rectangle boundary) {
+        return new Rectangle(segment.getStart(), boundary.getY1(),
+                            segment.getEnd(), boundary.getY2());
     }
 }

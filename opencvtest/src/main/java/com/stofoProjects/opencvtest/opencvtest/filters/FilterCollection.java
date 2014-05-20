@@ -15,7 +15,7 @@ public class FilterCollection {
 
     private static final String TAG = LogUtils.makeLogTag(FilterCollection.class);
 
-    private static final int SOBEL_THRESHOLD_VALUE = 100;
+    private static final int SOBEL_THRESHOLD_VALUE = 50;
     private static final int SOBEL_THRESHOLD_MAXVALUE = 255;
     private static final int CANNY_THRESHOLD_1 = 80;
     private static final int CANNY_THRESHOLD_2 = 100;
@@ -61,8 +61,8 @@ public class FilterCollection {
             return null;
         }
 
-        Imgproc.threshold(sobelGrad, sobelGrad, SOBEL_THRESHOLD_VALUE,
-                SOBEL_THRESHOLD_MAXVALUE, Imgproc.THRESH_BINARY);
+//        Imgproc.threshold(sobelGrad, sobelGrad, SOBEL_THRESHOLD_VALUE,
+//                SOBEL_THRESHOLD_MAXVALUE, Imgproc.THRESH_BINARY);
         Core.convertScaleAbs(sobelGrad, sobelGrad);
 
         return sobelGrad;

@@ -4,6 +4,7 @@ import com.stofoProjects.opencvtest.opencvtest.models.MeanSegment;
 import com.stofoProjects.opencvtest.opencvtest.models.Segment;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 
@@ -72,5 +73,71 @@ public class MathUtils {
         });
 
         return segments.get(Math.round(segments.size() / 2));
+    }
+
+    /**
+     * Sums all columns into one row vector
+     * @param image image which columns we want to sum
+     * @return one row vector with summed columns
+     */
+    public static Mat verticalProjection(Mat image) {
+        Mat summedColumns = new Mat();
+
+        //Sum columns -> reduce matrix to one column
+        Core.reduce(image, summedColumns, 0, Core.REDUCE_SUM, CvType.CV_32SC1);
+
+        return summedColumns;
+    }
+
+    public static Mat horizontalProjection(Mat image) {
+        Mat summedRows = new Mat();
+
+        //Sum rows -> reduce matrix to one column
+        Core.reduce(image, summedRows, 1, Core.REDUCE_SUM, CvType.CV_32SC1);
+
+        return summedRows;
+    }
+
+    public static List<Segment> getSegmentsAboveMeanValue(Mat summedVector, List<MeanSegment> meanValues, int typeOfVector) {
+        List<Segment> numberSegments = new ArrayList<Segment>();
+
+        int tmpStart = -1;
+        for(int i = 0; i < meanValues.size(); i++) {
+            for (int j = meanValues.get(i).getStart(); j < meanValues.get(i).getEnd(); j++) {
+
+                double actualValue = (typeOfVector == DataUtils.COLUMN_VECTOR)
+                                        ? summedVector.get(j, 0)[0]
+                                        : summedVector.get(0, j)[0];
+
+                if (actualValue > meanValues.get(i).getMeanValue()) {
+                    if(tmpStart == -1)
+                        tmpStart = j;
+                } else if (actualValue < meanValues.get(i).getMeanValue()) {
+                    if(tmpStart != -1) {
+                        numberSegments.add(new Segment(tmpStart, j));
+                        tmpStart = -1;
+                    }
+                }
+            }
+        }
+
+        return numberSegments;
+    }
+
+    public static Segment findBiggestSegment(List<Segment> segments) {
+        if(segments == null || segments.size() == 0)
+            return null;
+
+        Segment biggestSegment = segments.get(0);
+        int maxWidth = biggestSegment.getWidth();
+
+        for(Segment segment : segments){
+            if(maxWidth < segment.getWidth()) {
+                maxWidth = segment.getWidth();
+                biggestSegment = segment;
+            }
+        }
+
+        return biggestSegment;
     }
 }

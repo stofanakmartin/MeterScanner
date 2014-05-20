@@ -57,11 +57,11 @@ public class HorizontalTextDetector {
 
         List<Segment> joinedSegments = joinSegments(mSummedRows, segments);
 
-        mNumberLineSegment = findBiggestSegment(joinedSegments);
+        mNumberLineSegment = MathUtils.findBiggestSegment(joinedSegments);
 
         if(mNumberLineSegment != null) {
             mNumberLineSegment = expandBiggestSegment(mSummedRows, mNumberLineSegment);
-            mNumberLineBoundaries = DataUtils.rectangleFromSegment(mNumberLineSegment, grayImage.width());
+            mNumberLineBoundaries = DataUtils.rectangleFromSegmentVertical(mNumberLineSegment, grayImage.width());
         }
     }
 
@@ -131,22 +131,22 @@ public class HorizontalTextDetector {
         return joinedSegments;
     }
 
-    private Segment findBiggestSegment(List<Segment> segments) {
-        if(segments == null || segments.size() == 0)
-            return null;
-
-        Segment biggestSegment = segments.get(0);
-        int maxWidth = biggestSegment.getWidth();
-
-        for(Segment segment : segments){
-            if(maxWidth < segment.getWidth()) {
-                maxWidth = segment.getWidth();
-                biggestSegment = segment;
-            }
-        }
-
-        return biggestSegment;
-    }
+//    private Segment findBiggestSegment(List<Segment> segments) {
+//        if(segments == null || segments.size() == 0)
+//            return null;
+//
+//        Segment biggestSegment = segments.get(0);
+//        int maxWidth = biggestSegment.getWidth();
+//
+//        for(Segment segment : segments){
+//            if(maxWidth < segment.getWidth()) {
+//                maxWidth = segment.getWidth();
+//                biggestSegment = segment;
+//            }
+//        }
+//
+//        return biggestSegment;
+//    }
 
     /**
      * Expands boundaries of the biggest segment

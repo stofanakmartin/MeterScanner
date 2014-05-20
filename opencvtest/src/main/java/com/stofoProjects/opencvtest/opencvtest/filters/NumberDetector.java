@@ -13,6 +13,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,20 +28,23 @@ public class NumberDetector {
     private static final int DEFAULT_CANNY_THRESHOLD_1 = 150;
     private static final int DEFAULT_CANNY_THRESHOLD_2 = 200;
     private static final int MINIMUM_SEGMENTS_COUNT = 5;
+    private static final int NUMBERS_OFFSET = 10;
+    private static final int MAX_PIXEL_INTENSITY = 255;
 
     private Rectangle mBoundaries;
     private Mat mSummedEdges;
     private int mNumberOfSegments = DEFAULT_SEGMENTS_COUNT;
     private int mImageWidth;
-    private int mRegionDistanceTollerance;
-    private int mRegionWidthTollerance;
+    private int mRegionDistanceTolerance;
+    private int mRegionWidthTolerance;
     private List<Segment> mNumberSegments;
+    private List<Rect> mTrimmedNumbers;
 
     public NumberDetector(int imageWidth) {
         mBoundaries = null;
         mImageWidth = imageWidth;
-        mRegionDistanceTollerance = imageWidth / 60;
-        mRegionWidthTollerance = imageWidth / 50;
+        mRegionDistanceTolerance = imageWidth / 60;
+        mRegionWidthTolerance = imageWidth / 60;
     }
 
     public void findNumbers(Mat grayImage, Rectangle boundaries) {
@@ -51,13 +55,19 @@ public class NumberDetector {
         Rect roi = new Rect(boundaries.getX1Int(), boundaries.getY1Int(), boundaries.getWidthInt(), boundaries.getHeightInt());
         Mat subGray = grayImage.submat(roi);
 
-        final Mat edgeImage = FilterCollection.cannyFilter(grayImage);
-        final Mat summedEdges = verticalProjection(edgeImage);
+        //Imgproc.equalizeHist(subGray, subGray);
+        final Mat edgeImage = FilterCollection.cannyFilter(subGray);
+
+        if(mSummedEdges == null)
+            mSummedEdges = new Mat(1, grayImage.width(), CvType.CV_32SC1);
+        mSummedEdges = MathUtils.verticalProjection(edgeImage);//verticalProjection(edgeImage);
         final List<MeanSegment> meanSegments = MathUtils.calculateMeanSegments(
-                                                    summedEdges,
+                                                    mSummedEdges,
                                                     mNumberOfSegments,
                                                     DataUtils.ROW_VECTOR);
-        mNumberSegments = findNumberSegments(summedEdges ,meanSegments);
+        mNumberSegments = findNumberSegments(mSummedEdges ,meanSegments);
+
+        mTrimmedNumbers = trimNumbers(grayImage, mNumberSegments);
 
     }
 
@@ -67,7 +77,7 @@ public class NumberDetector {
      * @param edgeImage image with detected edges
      * @return one row vector with summed columns
      */
-    private Mat verticalProjection(Mat edgeImage) {
+    /*private Mat verticalProjection(Mat edgeImage) {
         if(mSummedEdges == null) {
             mSummedEdges = new Mat(1, edgeImage.width(), CvType.CV_32SC1);
         }
@@ -76,7 +86,7 @@ public class NumberDetector {
         Core.reduce(edgeImage, mSummedEdges, 0, Core.REDUCE_SUM, CvType.CV_32SC1);
 
         return mSummedEdges;
-    }
+    }*/
 
     /**
      * Method which from summed columns vector of edge image and mean values(number of segments)
@@ -95,22 +105,24 @@ public class NumberDetector {
      */
     private List<Segment> findNumberSegments(Mat vectorData, List<MeanSegment> meanValues) {
 
-        List<Segment> numberSegments = new ArrayList<Segment>();
+//        List<Segment> numberSegments = new ArrayList<Segment>();
+//
+//        int tmpStart = -1;
+//        for(int i = 0; i < meanValues.size(); i++) {
+//            for (int j = meanValues.get(i).getStart(); j < meanValues.get(i).getEnd(); j++) {
+//                if (vectorData.get(0, j)[0] > meanValues.get(i).getMeanValue()) {
+//                    if(tmpStart == -1)
+//                        tmpStart = j;
+//                } else if (vectorData.get(0, j)[0] < meanValues.get(i).getMeanValue()) {
+//                    if(tmpStart != -1) {
+//                        numberSegments.add(new Segment(tmpStart, j));
+//                        tmpStart = -1;
+//                    }
+//                }
+//            }
+//        }
 
-        int tmpStart = -1;
-        for(int i = 0; i < meanValues.size(); i++) {
-            for (int j = meanValues.get(i).getStart(); j < meanValues.get(i).getEnd(); j++) {
-                if (vectorData.get(0, j)[0] > meanValues.get(i).getMeanValue()) {
-                    if(tmpStart == -1)
-                        tmpStart = j;
-                } else if (vectorData.get(0, j)[0] < meanValues.get(i).getMeanValue()) {
-                    if(tmpStart != -1) {
-                        numberSegments.add(new Segment(tmpStart, j));
-                        tmpStart = -1;
-                    }
-                }
-            }
-        }
+        List<Segment> numberSegments = MathUtils.getSegmentsAboveMeanValue(vectorData, meanValues, DataUtils.ROW_VECTOR);
 
         numberSegments = joinSmallSegments(numberSegments);
 
@@ -122,6 +134,8 @@ public class NumberDetector {
         }
         return numberSegments;
     }
+
+
 
     /**
      * Loops through all founded regions looking for regions that are close to each other, joining
@@ -138,7 +152,7 @@ public class NumberDetector {
             Segment actualSegment = segments.get(i);
             Segment nextSegment = segments.get(i + 1);
 
-            if(nextSegment.getStart() - actualSegment.getEnd() < mRegionDistanceTollerance) {
+            if(nextSegment.getStart() - actualSegment.getEnd() < mRegionDistanceTolerance) {
                 if(segment == null)
                     segment = new Segment(actualSegment.getStart(), nextSegment.getEnd());
 
@@ -170,29 +184,11 @@ public class NumberDetector {
         List<Segment> filteredSegments = new ArrayList<Segment>();
 
         for(int i = 0; i < segments.size(); i++) {
-            if(segments.get(i).getWidth() > mRegionWidthTollerance) {
+            if(segments.get(i).getWidth() > mRegionWidthTolerance) {
                 filteredSegments.add(segments.get(i));
             }
         }
         return  filteredSegments;
-    }
-
-    /**
-     * Draws founded segments. Rectangles which should bounds the number in image
-     * @param rgbaImage Image to which we are drawing
-     * @return Image with drawed rectangles
-     */
-    public Mat drawNumberSegments(Mat rgbaImage) {
-        if(mBoundaries == null)
-            return rgbaImage;
-
-        for(int i = 0; i < mNumberSegments.size(); i++) {
-            Point p1 = new Point(mNumberSegments.get(i).getStart(), mBoundaries.getY1Int());
-            Point p2 = new Point(mNumberSegments.get(i).getEnd(), mBoundaries.getY2Int());
-            Core.rectangle(rgbaImage, p1, p2, new Scalar(0, 255, 0));
-        }
-
-        return rgbaImage;
     }
 
     /**
@@ -217,12 +213,12 @@ public class NumberDetector {
                                                     segment.getStart(),
                                                     segment.getStart()
                                                             + (segment.getWidth() / 2)
-                                                            - (mRegionDistanceTollerance / 2)
+                                                            - (mRegionDistanceTolerance / 2)
                 );
 
                 Segment newSegmentRight = new Segment(
                                                 segment.getStart()
-                                                    + (mRegionDistanceTollerance / 2)
+                                                    + (mRegionDistanceTolerance / 2)
                                                     + (segment.getWidth() / 2),
                                                 segment.getEnd()
                 );
@@ -234,6 +230,136 @@ public class NumberDetector {
         }
 
         return filteredSegments;
+    }
+
+    private List<Rect> trimNumbers(Mat grayImage, List<Segment> numberSegments) {
+
+        final int minCountPixelInColumn = 1;
+        final int minCountPixelInRow = 1;
+
+        if(numberSegments == null || numberSegments.size() == 0)
+            return null;
+
+        List<Rect> output = new ArrayList<Rect>(numberSegments.size());
+
+        final int y1 = mBoundaries.getY1Int();
+        final int height = mBoundaries.getHeightInt();
+
+        for(Segment numberBoundary : numberSegments) {
+            Mat subGray = grayImage.submat(new Rect(numberBoundary.getStart(), y1,
+                                numberBoundary.getWidth(), height));
+
+            subGray = FilterCollection.sobelBoth(subGray);
+
+            final Mat summedRows = MathUtils.horizontalProjection(subGray);
+
+            List<MeanSegment> colMean = MathUtils.calculateMeanSegments(summedRows, 1, DataUtils.COLUMN_VECTOR);
+
+            //Find segments inside number boundary
+            //List<Segment> innerSegments = MathUtils.getSegmentsAboveMeanValue(summedCols, colMean, DataUtils.COLUMN_VECTOR);
+
+            //Segment biggestNumberSegment = MathUtils.findBiggestSegment(innerSegments);
+
+            double actualSum = 0;
+            double previousSum = 0;
+
+            int startRow = 0;
+            int endRow = 0;
+            for(int i = summedRows.height() / 2; i >= 2; i -= 3) {
+                actualSum = summedRows.get(i, 0)[0]
+                                + summedRows.get(i - 1, 0)[0]
+                                + summedRows.get(i - 2 , 0)[0];
+
+                if(previousSum != 0) {
+                    if(actualSum < previousSum * 0.50) {
+                        startRow = i;
+                        break;
+                    }
+                }
+                previousSum = actualSum;
+
+            }
+
+            actualSum = 0;
+            previousSum = 0;
+            for(int i = summedRows.height() / 2; i < summedRows.height() - 2; i += 3) {
+                actualSum = summedRows.get(i, 0)[0]
+                        + summedRows.get(i + 1, 0)[0]
+                        + summedRows.get(i + 2 , 0)[0];
+
+                if(previousSum != 0) {
+                    if(actualSum < previousSum * 0.40) {
+                        endRow = i;
+                        break;
+                    }
+                }
+                previousSum = actualSum;
+
+            }
+
+//            int newYStart = biggestNumberSegment != null
+//                                ? biggestNumberSegment.getStart()
+//                                : y1;
+//            int newHeight = biggestNumberSegment != null
+//                                ? biggestNumberSegment.getWidth()
+//                                : height;
+
+            int newStartY = (startRow == 0) ? y1 : y1 + startRow;
+            int tmpHeight = (startRow == 0) ? height : height - startRow - 1;
+            int newHeight = (endRow == 0) ? tmpHeight : endRow - startRow - 1;
+
+            output.add(new Rect(numberBoundary.getStart(), newStartY,
+                                numberBoundary.getWidth(), newHeight));
+        }
+
+        return output;
+    }
+
+    /************************* RENDERING METHODS ********************************
+
+    /**
+     * Draws founded segments. Rectangles which should bounds the number in image
+     * @param rgbaImage Image to which we are drawing
+     * @return Image with drawed rectangles
+     */
+    public Mat drawNumberSegments(Mat rgbaImage) {
+        if(mBoundaries == null)
+            return rgbaImage;
+
+        for(int i = 0; i < mNumberSegments.size(); i++) {
+            Point p1 = new Point(mNumberSegments.get(i).getStart(), mBoundaries.getY1Int());
+            Point p2 = new Point(mNumberSegments.get(i).getEnd(), mBoundaries.getY2Int());
+            Core.rectangle(rgbaImage, p1, p2, new Scalar(0, 255, 0));
+        }
+
+        return rgbaImage;
+    }
+
+    public Mat drawNumbersToImage(Mat targetImage, Mat sourceImg, Point uiStartPoint) {
+        if(mTrimmedNumbers == null || mTrimmedNumbers.size() == 0)
+            return targetImage;
+
+        int actualX = (int)Math.round(uiStartPoint.x);
+        final int yPosition = (int)Math.round(uiStartPoint.y);
+
+        for(Rect rect : mTrimmedNumbers) {
+            Mat numberImg = sourceImg.submat(rect);
+
+            //numberImg = FilterCollection.thresholdFilter(numberImg);
+            //numberImg = FilterCollection.cannyFilter(numberImg);
+            numberImg = FilterCollection.sobelHorizontal(numberImg);
+
+            Mat colorNumber = new Mat();
+            Imgproc.cvtColor(numberImg, colorNumber, Imgproc.COLOR_GRAY2RGBA, 4);
+
+            colorNumber.copyTo(targetImage.colRange(actualX, actualX + rect.width)
+                                      .rowRange(yPosition, yPosition + rect.height));
+            //targetImage.setTo(numberImg);
+
+            actualX += rect.width + NUMBERS_OFFSET;
+        }
+
+        return targetImage;
     }
 
     //************* GETTERS & SETTERS *******************
