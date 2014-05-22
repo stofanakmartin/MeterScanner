@@ -83,7 +83,7 @@ public class MathUtils {
     public static Mat verticalProjection(Mat image) {
         Mat summedColumns = new Mat();
 
-        //Sum columns -> reduce matrix to one column
+        //Sum columns -> reduce matrix to one row
         Core.reduce(image, summedColumns, 0, Core.REDUCE_SUM, CvType.CV_32SC1);
 
         return summedColumns;
@@ -139,5 +139,27 @@ public class MathUtils {
         }
 
         return biggestSegment;
+    }
+
+    public static double medianFromVector(Mat vectorData, int typeOfVector) {
+
+        Mat sorted = new Mat();
+        Core.sort(vectorData, sorted, Core.SORT_ASCENDING);
+
+        final double median = (typeOfVector == DataUtils.ROW_VECTOR)
+                                ? sorted.get(0, vectorData.width() / 2)[0]
+                                : sorted.get(vectorData.height() / 2, 0)[0];
+        return median;
+    }
+
+    public static double quarterFromVector(Mat vectorData, int typeOfVector) {
+
+        Mat sorted = new Mat();
+        Core.sort(vectorData, sorted, Core.SORT_ASCENDING);
+
+        final double median = (typeOfVector == DataUtils.ROW_VECTOR)
+                ? sorted.get(0, vectorData.width() / 4)[0]
+                : sorted.get(vectorData.height() / 4, 0)[0];
+        return median;
     }
 }

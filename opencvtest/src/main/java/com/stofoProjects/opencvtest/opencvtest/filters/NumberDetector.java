@@ -30,6 +30,7 @@ public class NumberDetector {
     private static final int MINIMUM_SEGMENTS_COUNT = 5;
     private static final int NUMBERS_OFFSET = 10;
     private static final int MAX_PIXEL_INTENSITY = 255;
+    private static final int TRIM_VERTICAL_ADDITION = 255;
 
     private Rectangle mBoundaries;
     private Mat mSummedEdges;
@@ -37,14 +38,18 @@ public class NumberDetector {
     private int mImageWidth;
     private int mRegionDistanceTolerance;
     private int mRegionWidthTolerance;
+    private int mNumberWidthTolerance;
     private List<Segment> mNumberSegments;
     private List<Rect> mTrimmedNumbers;
+    private int mTrimVerticalAddition;
 
     public NumberDetector(int imageWidth) {
         mBoundaries = null;
         mImageWidth = imageWidth;
         mRegionDistanceTolerance = imageWidth / 60;
         mRegionWidthTolerance = imageWidth / 60;
+        mNumberWidthTolerance = imageWidth / 100;
+        mTrimVerticalAddition = imageWidth / 160;
     }
 
     public void findNumbers(Mat grayImage, Rectangle boundaries) {
@@ -105,33 +110,20 @@ public class NumberDetector {
      */
     private List<Segment> findNumberSegments(Mat vectorData, List<MeanSegment> meanValues) {
 
-//        List<Segment> numberSegments = new ArrayList<Segment>();
-//
-//        int tmpStart = -1;
-//        for(int i = 0; i < meanValues.size(); i++) {
-//            for (int j = meanValues.get(i).getStart(); j < meanValues.get(i).getEnd(); j++) {
-//                if (vectorData.get(0, j)[0] > meanValues.get(i).getMeanValue()) {
-//                    if(tmpStart == -1)
-//                        tmpStart = j;
-//                } else if (vectorData.get(0, j)[0] < meanValues.get(i).getMeanValue()) {
-//                    if(tmpStart != -1) {
-//                        numberSegments.add(new Segment(tmpStart, j));
-//                        tmpStart = -1;
-//                    }
-//                }
-//            }
-//        }
-
         List<Segment> numberSegments = MathUtils.getSegmentsAboveMeanValue(vectorData, meanValues, DataUtils.ROW_VECTOR);
 
         numberSegments = joinSmallSegments(numberSegments);
 
         numberSegments = removeSmallSegments(numberSegments);
+        List<Segment> numberSegmentsOrig = new ArrayList<Segment>(numberSegments);
 
         if(numberSegments != null && numberSegments.size() >= MINIMUM_SEGMENTS_COUNT) {
             final Segment medianSegment = MathUtils.medianSegment(numberSegments);
-            numberSegments = splitLargeSegments(numberSegments, medianSegment);
+            numberSegments = splitLargeSegments(numberSegmentsOrig, medianSegment);
         }
+
+
+
         return numberSegments;
     }
 
@@ -232,87 +224,139 @@ public class NumberDetector {
         return filteredSegments;
     }
 
-    private List<Rect> trimNumbers(Mat grayImage, List<Segment> numberSegments) {
+    private List<Rect> trimHorizontal(Mat grayImg, List<Rect> numberRects) {
 
-        final int minCountPixelInColumn = 1;
-        final int minCountPixelInRow = 1;
+        List<Rect> toRemove = new ArrayList<Rect>();
+
+        for(Rect numberRect : numberRects) {
+            Mat subGray = grayImg.submat(numberRect);
+
+            subGray = FilterCollection.sobelHorizontal(subGray);
+
+            Mat summedRows = MathUtils.horizontalProjection(subGray);
+
+            List<MeanSegment> colMean = MathUtils.calculateMeanSegments(
+                    summedRows,
+                    1,
+                    DataUtils.COLUMN_VECTOR
+            );
+
+
+            double threshold = colMean.get(0).getMeanValue() / 2;
+            int startRow = 0;
+            int endRow = summedRows.height();
+
+            //From center to TOP
+            for(int i = summedRows.height() / 2; i >= 0; i--) {
+                if(Double.compare(summedRows.get(i, 0)[0], threshold) < 0) {
+                    startRow = i;
+                    break;
+                }
+            }
+
+            //From center to BOTTOM
+            for(int i = summedRows.height() / 2; i < summedRows.height(); i++) {
+
+                if(Double.compare(summedRows.get(i, 0)[0], colMean.get(0).getMeanValue() / 2) < 0) {
+                    endRow = i;
+                    break;
+                }
+            }
+
+            if(endRow - startRow >= mNumberWidthTolerance) {
+                numberRect.y = numberRect.y + startRow;
+                numberRect.height = endRow - startRow;
+            } else
+                toRemove.add(numberRect);
+
+            LogUtils.LOGD(TAG, "newStart " + numberRect.y + " newHeight " + numberRect.height);
+        }
+
+        numberRects.removeAll(toRemove);
+
+        return numberRects;
+    }
+
+
+    private List<Rect> trimVertical(Mat grayImg, List<Rect> numberRects) {
+
+        for(Rect numberRect : numberRects) {
+            Mat subGray = grayImg.submat(numberRect);
+
+            subGray = FilterCollection.sobelVertical(subGray);
+
+            Mat summedCols = MathUtils.verticalProjection(subGray);
+
+            List<MeanSegment> colMean = MathUtils.calculateMeanSegments(
+                                                                    summedCols,
+                                                                    1,
+                                                                    DataUtils.ROW_VECTOR
+            );
+
+            //double threshold = colMean.get(0).getMeanValue() / 2;
+            //double threshold = MathUtils.medianFromVector(summedCols, DataUtils.COLUMN_VECTOR);
+            double threshold = colMean.get(0).getMeanValue() * 0.75;
+            int startColumn = 0;
+            int endColumn = summedCols.width();
+
+            //From center to LEFT
+            for(int i = summedCols.width() / 2; i >= 0; i--) {
+                if(Double.compare(summedCols.get(0, i)[0], threshold) < 0) {
+                    startColumn = i;
+                    break;
+                }
+            }
+
+            //From center to RIGHT
+            for(int i = summedCols.width() / 2; i < summedCols.width(); i++) {
+
+                if(Double.compare(summedCols.get(0, i)[0], threshold) < 0) {
+                    endColumn = i;
+                    break;
+                }
+            }
+
+
+            if(endColumn - startColumn >= mNumberWidthTolerance) {
+                endColumn = (endColumn < summedCols.width() - mTrimVerticalAddition)
+                                ? endColumn + mTrimVerticalAddition
+                                : summedCols.width();
+
+                startColumn = (startColumn > mTrimVerticalAddition)
+                                ? startColumn - mTrimVerticalAddition
+                                : 0;
+
+                numberRect.width = (endColumn != 0) ? endColumn - startColumn : numberRect.width - startColumn;
+                numberRect.x = numberRect.x + startColumn;
+            }
+
+            LogUtils.LOGD(TAG, "newStart " + numberRect.x + " newWidth " + numberRect.width);
+            LogUtils.LOGD(TAG, "endColumn " + endColumn + " startColumn " + startColumn);
+        }
+
+
+
+        return numberRects;
+    }
+
+    private List<Rect> trimNumbers(Mat grayImage, List<Segment> numberSegments) {
 
         if(numberSegments == null || numberSegments.size() == 0)
             return null;
 
-        List<Rect> output = new ArrayList<Rect>(numberSegments.size());
+        List<Rect> numberRects = new ArrayList<Rect>(numberSegments.size());
 
         final int y1 = mBoundaries.getY1Int();
         final int height = mBoundaries.getHeightInt();
 
         for(Segment numberBoundary : numberSegments) {
-            Mat subGray = grayImage.submat(new Rect(numberBoundary.getStart(), y1,
-                                numberBoundary.getWidth(), height));
-
-            subGray = FilterCollection.sobelBoth(subGray);
-
-            final Mat summedRows = MathUtils.horizontalProjection(subGray);
-
-            List<MeanSegment> colMean = MathUtils.calculateMeanSegments(summedRows, 1, DataUtils.COLUMN_VECTOR);
-
-            //Find segments inside number boundary
-            //List<Segment> innerSegments = MathUtils.getSegmentsAboveMeanValue(summedCols, colMean, DataUtils.COLUMN_VECTOR);
-
-            //Segment biggestNumberSegment = MathUtils.findBiggestSegment(innerSegments);
-
-            double actualSum = 0;
-            double previousSum = 0;
-
-            int startRow = 0;
-            int endRow = 0;
-            for(int i = summedRows.height() / 2; i >= 2; i -= 3) {
-                actualSum = summedRows.get(i, 0)[0]
-                                + summedRows.get(i - 1, 0)[0]
-                                + summedRows.get(i - 2 , 0)[0];
-
-                if(previousSum != 0) {
-                    if(actualSum < previousSum * 0.50) {
-                        startRow = i;
-                        break;
-                    }
-                }
-                previousSum = actualSum;
-
-            }
-
-            actualSum = 0;
-            previousSum = 0;
-            for(int i = summedRows.height() / 2; i < summedRows.height() - 2; i += 3) {
-                actualSum = summedRows.get(i, 0)[0]
-                        + summedRows.get(i + 1, 0)[0]
-                        + summedRows.get(i + 2 , 0)[0];
-
-                if(previousSum != 0) {
-                    if(actualSum < previousSum * 0.40) {
-                        endRow = i;
-                        break;
-                    }
-                }
-                previousSum = actualSum;
-
-            }
-
-//            int newYStart = biggestNumberSegment != null
-//                                ? biggestNumberSegment.getStart()
-//                                : y1;
-//            int newHeight = biggestNumberSegment != null
-//                                ? biggestNumberSegment.getWidth()
-//                                : height;
-
-            int newStartY = (startRow == 0) ? y1 : y1 + startRow;
-            int tmpHeight = (startRow == 0) ? height : height - startRow - 1;
-            int newHeight = (endRow == 0) ? tmpHeight : endRow - startRow - 1;
-
-            output.add(new Rect(numberBoundary.getStart(), newStartY,
-                                numberBoundary.getWidth(), newHeight));
+            numberRects.add(new Rect(numberBoundary.getStart(), y1, numberBoundary.getWidth(), height));
         }
 
-        return output;
+        numberRects = trimHorizontal(grayImage, numberRects);
+        numberRects = trimVertical(grayImage, numberRects);
+
+        return numberRects;
     }
 
     /************************* RENDERING METHODS ********************************
@@ -343,16 +387,22 @@ public class NumberDetector {
         final int yPosition = (int)Math.round(uiStartPoint.y);
 
         for(Rect rect : mTrimmedNumbers) {
-            Mat numberImg = sourceImg.submat(rect);
+            LogUtils.LOGD(TAG, "Image height " + sourceImg.height() + " rect y " + rect.y + " height " + rect.height);
+            Mat grayNumberImg = sourceImg.submat(rect);
+            //Mat colorNumberImg = targetImage.submat(rect);
+
 
             //numberImg = FilterCollection.thresholdFilter(numberImg);
             //numberImg = FilterCollection.cannyFilter(numberImg);
-            numberImg = FilterCollection.sobelHorizontal(numberImg);
 
-            Mat colorNumber = new Mat();
-            Imgproc.cvtColor(numberImg, colorNumber, Imgproc.COLOR_GRAY2RGBA, 4);
+//            numberImg = FilterCollection.sobelHorizontal(numberImg);
+//            Imgproc.dilate(numberImg, numberImg, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)));
+//            Imgproc.erode(numberImg, numberImg, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)));
+//
+//            Mat colorNumber = new Mat();
+            Imgproc.cvtColor(grayNumberImg, grayNumberImg, Imgproc.COLOR_GRAY2RGBA, 4);
 
-            colorNumber.copyTo(targetImage.colRange(actualX, actualX + rect.width)
+            grayNumberImg.copyTo(targetImage.colRange(actualX, actualX + rect.width)
                                       .rowRange(yPosition, yPosition + rect.height));
             //targetImage.setTo(numberImg);
 
